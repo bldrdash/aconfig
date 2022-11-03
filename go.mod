@@ -1,4 +1,4 @@
-module github.com/cristalhq/aconfig
+module github.com/bldrdash/aconfig
 
 go 1.16
 
