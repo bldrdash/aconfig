@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -142,7 +143,8 @@ func (sp *structParser) newParseField(parent *parsedField, field reflect.StructF
 			}
 			sp.flagNames[flagName] = struct{}{}
 			// TODO: must be typed
-			sp.flagSet.String(flagName, field.Tag.Get("default"), field.Tag.Get("usage"))
+			sp.setFlagDefault(flagName, &field)
+			// sp.flagSet.String(flagName, field.Tag.Get("default"), field.Tag.Get("usage"))
 		}
 	}
 
@@ -520,6 +522,49 @@ func (sp *structParser) applyFlatHelper(fields map[string]interface{}, tag strin
 	return nil
 }
 
+func (sp *structParser) setFlagDefault(flagName string, field *reflect.StructField) {
+
+	dv := field.Tag.Get("default")
+	usage := field.Tag.Get("usage")
+
+	t := field.Type.Kind()
+	// switch field.Type.Kind() {
+	switch t {
+
+	case reflect.Bool:
+		boolVal, _ := strconv.ParseBool(dv)
+		sp.flagSet.Bool(flagName, boolVal, usage)
+
+	case reflect.Float32:
+		fallthrough
+	case reflect.Float64:
+		f64Val, _ := strconv.ParseFloat(dv, 64)
+		sp.flagSet.Float64(flagName, f64Val, usage)
+
+	case reflect.Int:
+		fallthrough
+	case reflect.Int32:
+		intVal, _ := strconv.Atoi(dv)
+		sp.flagSet.Int(flagName, intVal, usage)
+
+	case reflect.Int64:
+		intVal, _ := strconv.ParseInt(dv, 10, 64)
+		sp.flagSet.Int64(flagName, intVal, usage)
+
+	case reflect.Uint:
+		fallthrough
+	case reflect.Uint32:
+		uintVal, _ := strconv.ParseUint(dv, 10, 32)
+		sp.flagSet.Uint(flagName, uint(uintVal), usage)
+
+	case reflect.Uint64:
+		uintVal, _ := strconv.ParseUint(dv, 10, 32)
+		sp.flagSet.Uint64(flagName, uint64(uintVal), usage)
+
+	default:
+		sp.flagSet.String(flagName, dv, usage)
+	}
+}
 func isPrimitive(v reflect.Type) bool {
 	return v.Kind() < reflect.Array || v.Kind() == reflect.String
 }
